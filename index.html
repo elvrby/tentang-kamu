@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>あなたへの手紙</title>
+    <style>
+        /* CSS TIDAK DIUBAH SAMA SEKALI */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ffffff 0%, #ffffff 50%, #ffd4e8 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Georgia', serif;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .container {
+            position: relative;
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #d63384;
+            font-size: clamp(1.5em, 5vw, 2.5em);
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(214, 51, 132, 0.3);
+        }
+
+        .instruction {
+            color: #9d4b6e;
+            font-size: clamp(1em, 3vw, 1.2em);
+            margin-bottom: 40px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        /* Amplop */
+        .envelope-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            height: 200px;
+            margin: 0 auto;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .envelope-wrapper:hover:not(.opened) {
+            transform: scale(1.05);
+        }
+
+        .envelope {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .envelope-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #f4f4f4;
+            border-radius: 5px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .envelope-flap {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-top: 120px solid #e74c3c;
+            top: 0;
+            left: 0;
+            transform-origin: top center;
+            transition: transform 0.8s ease;
+            z-index: 3;
+        }
+
+        .envelope-flap::before {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #c0392b;
+            border-radius: 50%;
+            top: -80px;
+            left: -15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .envelope-front {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-bottom: 120px solid #ecf0f1;
+            bottom: 0;
+            left: 0;
+            z-index: 2;
+        }
+
+        .envelope-wrapper.opened .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 0;
+        }
+
+        .envelope-wrapper.opened {
+            cursor: default;
+        }
+
+        /* Jurnal Buku */
+        .journal-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 90%;
+            max-width: 700px;
+            height: 85vh;
+            max-height: 600px;
+            perspective: 2000px;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.8s ease;
+        }
+
+        .journal-container.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .journal {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.8s ease;
+        }
+
+        /* Halaman Jurnal */
+        .journal-page {
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, #fffef7 0%, #fff8e7 100%);
+            border: 2px solid #8b4513;
+            box-shadow: 
+                inset 0 0 20px rgba(139, 69, 19, 0.1),
+                5px 5px 15px rgba(0, 0, 0, 0.3);
+            padding: 40px 30px;
+            overflow-y: auto;
+            transform-origin: left center;
+            transition: transform 0.8s ease;
+            backface-visibility: hidden;
+        }
+
+        .journal-page.left {
+            left: 0;
+            border-right: 1px solid #8b4513;
+            background: linear-gradient(to right, #fff8e7 0%, #fffef7 100%);
+        }
+
+        .journal-page.right {
+            right: 0;
+            border-left: 1px solid #8b4513;
+        }
+
+        /* Efek kertas lama */
+        .journal-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 30px,
+                    rgba(139, 69, 19, 0.05) 30px,
+                    rgba(139, 69, 19, 0.05) 31px
+                );
+            pointer-events: none;
+        }
+
+        /* Animasi flip */
+        .journal.flipping-next .journal-page.right {
+            transform: rotateY(-180deg);
+        }
+
+        .journal.flipping-prev .journal-page.right {
+            transform: rotateY(0deg);
+        }
+
+        .journal-page::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .journal-page::-webkit-scrollbar-thumb {
+            background: #8b4513;
+            border-radius: 3px;
+        }
+
+        .journal-content h2 {
+            color: #8b4513;
+            margin-bottom: 20px;
+            font-size: clamp(1.3em, 4vw, 1.8em);
+            text-align: center;
+            font-family: 'Georgia', serif;
+            border-bottom: 2px solid #8b4513;
+            padding-bottom: 10px;
+        }
+
+        .journal-content p {
+            color: #3e2723;
+            line-height: 2;
+            margin-bottom: 20px;
+            text-align: justify;
+            font-size: clamp(0.9em, 2.5vw, 1.1em);
+            font-family: 'Georgia', serif;
+        }
+
+        .journal-content .signature {
+            text-align: right;
+            font-style: italic;
+            color: #8b4513;
+            margin-top: 30px;
+            font-size: 1.1em;
+        }
+
+        .journal-content .date {
+            text-align: right;
+            color: #8b4513;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        /* Spine (punggung buku) */
+        .journal-spine {
+            position: absolute;
+            width: 30px;
+            height: 100%;
+            background: linear-gradient(to right, #654321, #8b4513, #654321);
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 
+                inset 0 0 10px rgba(0,0,0,0.5),
+                0 0 20px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        /* Kontrol navigasi */
+        .journal-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .nav-btn {
+            background: #8b4513;
+            color: #fff8e7;
+            border: 2px solid #654321;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: clamp(0.9em, 2.5vw, 1em);
+            transition: all 0.3s ease;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #654321;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        .nav-btn:disabled {
+            background: #ccc;
+            border-color: #999;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .page-indicator {
+            color: #8b4513;
+            font-weight: bold;
+            font-size: clamp(1em, 2.5vw, 1.2em);
+            background: rgba(255, 254, 247, 0.9);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 2px solid #8b4513;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .heart-decoration {
+            position: absolute;
+            font-size: clamp(1.5em, 4vw, 2em);
+            animation: float-heart 3s ease-in-out infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes float-heart {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .heart1 { top: 10%; left: 10%; animation-delay: 0s; }
+        .heart2 { top: 20%; right: 10%; animation-delay: 0.5s; }
+        .heart3 { bottom: 20%; left: 5%; animation-delay: 1s; }
+        .heart4 { bottom: 10%; right: 5%; animation-delay: 1.5s; }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #8b4513;
+            color: white;
+            border: 2px solid #654321;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5em;
+            z-index: 1001;
+            transition: all 0.3s ease;
+            line-height: 1;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .close-btn:hover {
+            background: #654321;
+            transform: rotate(90deg);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f39c12;
+            animation: confetti-fall 3s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .journal-page {
+                padding: 25px 20px;
+            }
+
+            .journal-spine {
+                width: 20px;
+            }
+
+            .journal-controls {
+                bottom: 10px;
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .envelope-wrapper {
+                max-width: 250px;
+                height: 166px;
+            }
+
+            .envelope-flap {
+                border-left: 125px solid transparent;
+                border-right: 125px solid transparent;
+                border-top: 100px solid #e74c3c;
+            }
+
+            .envelope-front {
+                border-left: 125px solid transparent;
+                border-right: 125px solid transparent;
+                border-bottom: 100px solid #ecf0f1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="container">
+        <h1>💌 特別な手紙をあなたに 💌</h1>
+        <p class="instruction">封筒をクリックして手紙を開けてね</p>
+        
+        <div class="envelope-wrapper" id="envelopeWrapper">
+            <div class="envelope">
+                <div class="envelope-back"></div>
+                <div class="envelope-flap"></div>
+                <div class="envelope-front"></div>
+            </div>
+            
+            <div class="heart-decoration heart1">💕</div>
+            <div class="heart-decoration heart2">💖</div>
+            <div class="heart-decoration heart3">💗</div>
+            <div class="heart-decoration heart4">💝</div>
+        </div>
+    </div>
+
+    <div class="journal-container" id="journalContainer">
+        <button class="close-btn" id="closeBtn">×</button>
+        
+        <div class="journal" id="journal">
+            <div class="journal-page left">
+                <div class="journal-content" id="leftContent"></div>
+            </div>
+            <div class="journal-page right">
+                <div class="journal-content" id="rightContent"></div>
+            </div>
+            <div class="journal-spine"></div>
+        </div>
+        
+        <div class="journal-controls">
+            <button class="nav-btn" id="prevBtn">← 前へ</button>
+            <div class="page-indicator" id="pageIndicator">1 / 3</div>
+            <button class="nav-btn" id="nextBtn">次へ →</button>
+        </div>
+    </div>
+
+    <script>
+        const envelopeWrapper = document.getElementById('envelopeWrapper');
+        const journalContainer = document.getElementById('journalContainer');
+        const journal = document.getElementById('journal');
+        const closeBtn = document.getElementById('closeBtn');
+        const overlay = document.getElementById('overlay');
+        const leftContent = document.getElementById('leftContent');
+        const rightContent = document.getElementById('rightContent');
+        const pageIndicator = document.getElementById('pageIndicator');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        let isOpened = false;
+        let currentPage = 0;
+        let isFlipping = false;
+
+        const letters = [
+            {
+                title: "愛するあなたへ",
+                date: "2024年12月19日",
+                content: `
+                    <p>大好きなあなたへ、</p>
+                    <p>この手紙は、あなたが私の人生においてどれほど大切かを伝えたくて、心を込めて書きました。</p>
+                    <p>あなたと過ごす毎日は、かけがえのない贈り物です。あなたの笑顔は私の日を照らし、あなたの存在がすべてをより美しくしてくれます。</p>
+                    <p>私の人生の大切な一部でいてくれてありがとう。ずっとあなたのそばにいることを約束します。</p>
+                `,
+                signature: "愛を込めて、<br>いつもあなたを想っている私より"
+            },
+            {
+                title: "私たちの美しい思い出",
+                date: "永遠の思い出",
+                content: `
+                    <p>ねえ、</p>
+                    <p>私たちが初めて会った時のことを今でも覚えています。輝く瞳と心からの笑顔に、一瞬で心を奪われました。</p>
+                    <p>一緒に過ごしたすべての瞬間は、心の中にずっとしまっておきたい大切な宝物です。</p>
+                    <p>笑い合った時間も、意味のある静寂も、すべてが私にとって特別です。私の人生を彩ってくれてありがとう。</p>
+                `,
+                signature: "いつもあなたのそばに、<br>あなたの恋人より"
+            },
+            {
+                title: "未来への約束",
+                date: "永遠に",
+                image: "qr-code.png",
+                content: `
+                    <p>最愛の人へ、</p>
+                    <p>楽しい時も辛い時も、いつもあなたのそばにいると約束します。互いに支え合い、強め合いながら、一緒に乗り越えていきましょう。</p>
+                    <p>未来は不確かなことばかりかもしれないけれど、一つだけ確かなことがあります。それは、私が心からあなたを愛し続けるということです。</p>
+                    <p>これからももっとたくさんの素敵な思い出を一緒に作っていこうね。私の人生にあなたがいてくれて、本当に幸せです。❤️</p>
+                `,
+                signature: "永遠にあなたのもの、<br>あなたを心から愛する者より"
+            }
+        ];
+
+        function renderPage() {
+            const letter = letters[currentPage];
+            
+            const imageHTML = letter.image 
+                ? `<img src="qr-code.png" style="width: 100%; max-width: 200px; border-radius: 8px; margin: 15px auto; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.3); border: 3px solid #8b4513;">` 
+                : '';
+            
+            leftContent.innerHTML = `
+                <div class="date">${letter.date}</div>
+                <h2>${letter.title}</h2>
+                ${imageHTML}
+            `;
+            
+            rightContent.innerHTML = `
+                ${letter.content}
+                <div class="signature">${letter.signature}</div>
+            `;
+            
+            pageIndicator.textContent = `${currentPage + 1} / ${letters.length}`;
+            prevBtn.disabled = currentPage === 0;
+            nextBtn.disabled = currentPage === letters.length - 1;
+        }
+
+        envelopeWrapper.addEventListener('click', function() {
+            if (!isOpened) {
+                envelopeWrapper.classList.add('opened');
+                overlay.classList.add('active');
+                
+                setTimeout(() => {
+                    journalContainer.classList.add('active');
+                }, 400);
+                
+                isOpened = true;
+                currentPage = 0;
+                renderPage();
+                createConfetti();
+                document.querySelector('.instruction').style.display = 'none';
+            }
+        });
+
+        function closeLetter() {
+            journalContainer.classList.remove('active');
+            
+            setTimeout(() => {
+                envelopeWrapper.classList.remove('opened');
+                overlay.classList.remove('active');
+                isOpened = false;
+                document.querySelector('.instruction').style.display = 'block';
+            }, 500);
+        }
+
+        closeBtn.addEventListener('click', closeLetter);
+        overlay.addEventListener('click', closeLetter);
+
+        prevBtn.addEventListener('click', function() {
+            if (currentPage > 0 && !isFlipping) {
+                isFlipping = true;
+                journal.classList.add('flipping-prev');
+                
+                setTimeout(() => {
+                    currentPage--;
+                    renderPage();
+                    journal.classList.remove('flipping-prev');
+                    isFlipping = false;
+                }, 800);
+            }
+        });
+
+        nextBtn.addEventListener('click', function() {
+            if (currentPage < letters.length - 1 && !isFlipping) {
+                isFlipping = true;
+                journal.classList.add('flipping-next');
+                
+                setTimeout(() => {
+                    currentPage++;
+                    renderPage();
+                    journal.classList.remove('flipping-next');
+                    isFlipping = false;
+                }, 800);
+            }
+        });
+
+        function createConfetti() {
+            const colors = ['#ff69b4', '#ff1493', '#ffb6c1', '#ff85c0', '#ffc0cb'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    
+                    if (Math.random() > 0.5) {
+                        confetti.style.borderRadius = '50%';
+                    }
+                    
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 50);
+            }
+        }
+
+        function createFloatingHeart() {
+            const heart = document.createElement('div');
+            heart.textContent = '❤️';
+            heart.style.position = 'fixed';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
+            heart.style.opacity = '0.3';
+            heart.style.animation = 'confetti-fall ' + (Math.random() * 5 + 5) + 's linear';
+            heart.style.pointerEvents = 'none';
+            heart.style.zIndex = '1';
+            
+            document.body.appendChild(heart);
+            setTimeout(() => heart.remove(), 10000);
+        }
+
+        setInterval(createFloatingHeart, 2000);
+
+        document.addEventListener('keydown', function(e) {
+            if (isOpened && !isFlipping) {
+                if (e.key === 'ArrowLeft' && currentPage > 0) {
+                    prevBtn.click();
+                } else if (e.key === 'ArrowRight' && currentPage < letters.length - 1) {
+                    nextBtn.click();
+                } else if (e.key === 'Escape') {
+                    closeLetter();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
